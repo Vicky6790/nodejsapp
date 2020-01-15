@@ -1,0 +1,52 @@
+version: '2'
+services:
+  mysqldb:
+    image: mysql:5.7
+    container_name: mysqldb
+#    command: --max_allowed_packet=32505856
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=backend_demo
+    command: --max_allowed_packet=32505856
+    volumes:
+      - "/home/ec2-user/Docker/mysql_data:/var/lib/mysql"
+#      - "/home/ec2-user/Docker/init.sql:/init.sql"
+    ports:
+      - "3306:3306"
+    restart: always
+  mongodb:
+    image: mongo
+    container_name: mongodb
+   # environment:
+    #  - MONGO_INITDB_ROOT_USERNAME=<username>
+     # - MONGO_INITDB_ROOT_PASSWORD=<password>
+    volumes:
+      - "/home/ec2-user/Docker/mongo_data:/data/db"
+    ports:
+      - "27017:27017"
+    restart: always
+  app:
+    build: ./
+    container_name: app
+    #env_file:
+    #  - conf.env
+    links:
+      - mysqldb
+      - mongodb
+    volumes:
+      - "/home/ec2-user/Docker/BackendDemoProject:/app"
+    ports:
+      - "51005:51005"
+    restart: always
+  webserver:
+    image: nginx:mainline-alpine
+    container_name: webserver
+    links:
+      - app
+    ports:
+      - "443:443"
+    volumes:
+      - ./default:/etc/nginx/conf.d/app.conf
+      - ./nginx-selfsigned.crt:/nginx-selfsigned.crt
+      - ./nginx-selfsigned.key:/nginx-selfsigned.key
+      - ./dhparam.pem:/dhparam.pem
